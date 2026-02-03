@@ -504,14 +504,11 @@
     // =========================
     // WÄNDE mit Metallwand-Textur
     // =========================
-    const wallGeometry = new THREE.BoxGeometry(0.9375, 0.46875, 0.0335);
-    const sideWallGeometry = new THREE.BoxGeometry(0.0335, 0.46875, 1.00675);
-    
     const wallTexture = new THREE.TextureLoader().load('metallwand.webp');
-    const wallMaterial = new THREE.MeshStandardMaterial({
-      map: wallTexture,
-      metalness: 0.7,
-      roughness: 0.3
+    
+    const wallGeometry = new THREE.BoxGeometry(0.9375, 0.46875, 0.0335);
+    const wallMaterial = new THREE.MeshBasicMaterial({ 
+      map: wallTexture
     });
     
     const wall = new THREE.Mesh(wallGeometry, wallMaterial);
@@ -526,6 +523,8 @@
     wall2.receiveShadow = true;
     scene.add(wall2);
 
+    const sideWallGeometry = new THREE.BoxGeometry(0.0335, 0.46875, 1.00675);
+    
     const wallLeft = new THREE.Mesh(sideWallGeometry, wallMaterial);
     wallLeft.position.set(-0.48550, 0.234375, 0.1105);
     wallLeft.castShadow = true;

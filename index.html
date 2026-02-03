@@ -431,10 +431,8 @@
       ctx.fillRect(0, 85, 85, 85);
 
       const geo = new THREE.PlaneGeometry(cardWidth, cardHeight);
-      const mat = new THREE.MeshStandardMaterial({ 
+      const mat = new THREE.MeshBasicMaterial({ 
         map: leernohitTexture, 
-        roughness: 0.8, 
-        metalness: 0.0, 
         side: THREE.DoubleSide 
       });
       const plane = new THREE.Mesh(geo, mat);
@@ -893,13 +891,13 @@
         card.ctx.clearRect(0, 0, 85, 170);
         card.ctx.drawImage(img, 0, 0, 85, 170);
         
-        // Zahl 67px nördlicher
+        // Zahl positionieren
         const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
         card.ctx.fillStyle = '#2a1810';
         card.ctx.font = 'bold 56px Arial';
         card.ctx.textAlign = 'center';
         card.ctx.textBaseline = 'middle';
-        card.ctx.fillText(displayText, 42, 106);
+        card.ctx.fillText(displayText, 42, 74);
         
         card.texture.needsUpdate = true;
         card.mesh.material.map = card.texture;
@@ -917,7 +915,7 @@
           card.ctx.font = 'bold 56px Arial';
           card.ctx.textAlign = 'center';
           card.ctx.textBaseline = 'middle';
-          card.ctx.fillText(displayText, 42, 106);
+          card.ctx.fillText(displayText, 42, 74);
           
           card.texture.needsUpdate = true;
           card.mesh.material.map = card.texture;

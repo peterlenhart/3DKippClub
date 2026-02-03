@@ -256,7 +256,7 @@
   
   <div id="uiOverlay">
     <div id="handIcon">👆</div>
-    <div id="hintText">KIPPE UND MERKE!</div>
+    <div id="hintText">KIPPE & MERKE!</div>
     <div id="countdown">60</div>
     <button id="actionButton">weiter</button>
     <button id="backButton">↻</button>
@@ -342,7 +342,7 @@
     pauseLights[3].position.set(0, -1, 2);
     pauseLights.forEach(l => { l.visible = false; scene.add(l); });
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.68);
     mainLight.position.set(0, 8.708, -0.46875);
     mainLight.castShadow = true;
     mainLight.shadow.mapSize.width = 2048;
@@ -355,11 +355,11 @@
     mainLight.shadow.camera.bottom = -2;
     scene.add(mainLight);
 
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.2);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.25);
     fillLight.position.set(1, 3, 1);
     scene.add(fillLight);
 
-    const fillLightSouth = new THREE.DirectionalLight(0xffffff, 0.25);
+    const fillLightSouth = new THREE.DirectionalLight(0xffffff, 0.28);
     fillLightSouth.position.set(0, 2, 4);
     scene.add(fillLightSouth);
 
@@ -536,13 +536,13 @@
     
     const wall = new THREE.Mesh(wallGeometry, wallMaterial);
     wall.position.set(0, 0.234375, 0.597125);
-    wall.castShadow = true;
+    wall.castShadow = false;
     wall.receiveShadow = true;
     scene.add(wall);
 
     const wall2 = new THREE.Mesh(wallGeometry, wallMaterial);
     wall2.position.set(0, 0.234375, -0.376125);
-    wall2.castShadow = true;
+    wall2.castShadow = false;
     wall2.receiveShadow = true;
     scene.add(wall2);
 
@@ -550,13 +550,13 @@
     
     const wallLeft = new THREE.Mesh(sideWallGeometry, wallMaterial);
     wallLeft.position.set(-0.48550, 0.234375, 0.1105);
-    wallLeft.castShadow = true;
+    wallLeft.castShadow = false;
     wallLeft.receiveShadow = true;
     scene.add(wallLeft);
     
     const wallRight = new THREE.Mesh(sideWallGeometry, wallMaterial);
     wallRight.position.set(0.48550, 0.234375, 0.1105);
-    wallRight.castShadow = true;
+    wallRight.castShadow = false;
     wallRight.receiveShadow = true;
     scene.add(wallRight);
 
@@ -632,6 +632,10 @@
       if (imgRotation) ctx.rotate(imgRotation);
       ctx.drawImage(cubeTexImg, -128, -128, 256, 256);
       ctx.restore();
+      
+      // Kontrast reduzieren mit semi-transparentem Overlay
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fillRect(0, 0, 256, 256);
 
       // Slot-Zellen beschriften
       ctx.fillStyle = '#2a1810';
@@ -657,16 +661,6 @@
         }
         ctx.restore();
       }
-
-      // Gitterlinien
-      ctx.strokeStyle = '#c4a882';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(85, 0);   ctx.lineTo(85, 256);
-      ctx.moveTo(171, 0);  ctx.lineTo(171, 256);
-      ctx.moveTo(0, 85);   ctx.lineTo(256, 85);
-      ctx.moveTo(0, 171);  ctx.lineTo(256, 171);
-      ctx.stroke();
 
       // Rand
       ctx.strokeStyle = '#6b5040';
@@ -1229,7 +1223,7 @@
     let countdownTimer = null;
 
     // UI für Phase 2 initialisieren
-    hintText.textContent = 'KIPPE UND MERKE!';
+    hintText.textContent = 'KIPPE & MERKE!';
     actionButton.textContent = 'weiter';
     
     function startCountdown(onFinish) {
@@ -1317,7 +1311,7 @@
       
       // UI zurücksetzen zu Phase 2
       hintText.style.display = 'block';
-      hintText.textContent = 'KIPPE UND MERKE!';
+      hintText.textContent = 'KIPPE & MERKE!';
       actionButton.textContent = 'weiter';
       actionButton.style.display = 'block';
       actionButton.classList.remove('pulse');

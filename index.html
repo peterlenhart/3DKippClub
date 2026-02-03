@@ -574,7 +574,6 @@
       const spieltischMaterial = new THREE.MeshStandardMaterial({ 
         map: texture,
         transparent: true,
-        color: 0x999999, // 60% Helligkeit für satteres Schwarz
         roughness: 0.8,
         metalness: 0.2
       });
@@ -733,21 +732,6 @@
       ];
       cube.material = cubeMaterial;
     };
-
-    // Grüne Markierung - Obere Ostkante
-    const edgeGeometry = new THREE.CylinderGeometry(0.008, 0.008, cubeSize, 8);
-    const edgeMaterial = new THREE.MeshStandardMaterial({
-      color: 0x00ff00,
-      metalness: 0.5,
-      roughness: 0.3,
-      emissive: 0x00ff00,
-      emissiveIntensity: 0.3
-    });
-    
-    const upperEastEdge = new THREE.Mesh(edgeGeometry, edgeMaterial);
-    upperEastEdge.rotation.x = Math.PI / 2;
-    upperEastEdge.position.set(0, 0.46875, 0.109375 + cubeSize / 2);
-    kipGroup.add(upperEastEdge);
 
     // =========================
     // 2D-TIMING SYSTEM

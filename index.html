@@ -402,35 +402,50 @@
     const cardWidth = 0.15625;   // 1 Zelle
     const cardHeight = 0.3125;   // 2 Zellen
     const cardGap = (1.25 - 6 * cardWidth) / 5; // 6 Karten auf 8 Zellen verteilt
-    const cardY = 0.001 + 0.002; // auf π1
+    const cardY = 0.001 + 3 * 0.15625 + 0.002; // auf Spieltisch (3 Zellen über π1)
     const cardZ = 0.109375 + 4 * 0.15625 + 0.15625; // 4 Zeilen südlich von X-Achse, Kartenmitte
 
     const totalCardsWidth = 8 * cardWidth; // 8 Zellen
     const cardStartX = -totalCardsWidth / 2 + cardWidth / 2;
 
     const gameCards = [];
+    const leernohitTexture = new THREE.TextureLoader().load('leernohit.webp');
+    
+    // Farb-Ziel-Texturen laden
+    const colorTargetTextures = {
+      blau: new THREE.TextureLoader().load('blauzielhit.webp'),
+      orange: new THREE.TextureLoader().load('orangezielhit.webp'),
+      gruen: new THREE.TextureLoader().load('gruenzielhit.webp'),
+      violett: new THREE.TextureLoader().load('violetthitziel.webp')
+    };
+    
     for (let i = 0; i < 6; i++) {
       const canvas = document.createElement('canvas');
       canvas.width = 85;
       canvas.height = 170;
       const ctx = canvas.getContext('2d');
-      // Platzhalter: oben grau, unten beige
+      // Platzhalter für spätere Verwendung als Ziel
       ctx.fillStyle = '#888888';
       ctx.fillRect(0, 0, 85, 85);
       ctx.fillStyle = '#a08060';
       ctx.fillRect(0, 85, 85, 85);
 
-      const texture = new THREE.CanvasTexture(canvas);
       const geo = new THREE.PlaneGeometry(cardWidth, cardHeight);
-      const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.8, metalness: 0.0, side: THREE.DoubleSide });
+      const mat = new THREE.MeshStandardMaterial({ 
+        map: leernohitTexture, 
+        roughness: 0.8, 
+        metalness: 0.0, 
+        side: THREE.DoubleSide 
+      });
       const plane = new THREE.Mesh(geo, mat);
       plane.rotation.x = -Math.PI / 2;
       plane.position.set(cardStartX + i * (cardWidth + cardGap), cardY, cardZ);
+      plane.castShadow = true;
       plane.receiveShadow = true;
       scene.add(plane);
       plane.visible = false;
 
-      gameCards.push({ mesh: plane, canvas: canvas, ctx: ctx, texture: texture });
+      gameCards.push({ mesh: plane, canvas: canvas, ctx: ctx, texture: new THREE.CanvasTexture(canvas) });
     }
     // =========================
     // GRADIENT SCHATTEN ÜBER KÄRTCHEN
@@ -454,7 +469,7 @@
     const shadowGradMat = new THREE.MeshBasicMaterial({ map: shadowGradTexture, transparent: true });
     const shadowGradPlane = new THREE.Mesh(shadowGradGeo, shadowGradMat);
     shadowGradPlane.rotation.x = -Math.PI / 2;
-    shadowGradPlane.position.set(0, 0.004, 0.890625); // cardZ
+    shadowGradPlane.position.set(0, 0.001 + 3 * 0.15625 + 0.003, 0.890625); // auf Spieltisch
     shadowGradPlane.visible = false;
     scene.add(shadowGradPlane);
 
@@ -868,17 +883,46 @@
       } while (bereitsGetroffen.has(randZahl + '_' + randColor.name) || wurzelKombis.has(randZahl + '_' + randColor.name));
 
       const card = gameCards[idx];
-      card.ctx.fillStyle = randColor.hex;
-      card.ctx.fillRect(0, 0, 85, 85);
-      card.ctx.fillStyle = '#a08060';
-      card.ctx.fillRect(0, 85, 85, 85);
-      const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
-      card.ctx.fillStyle = '#2a1810';
-      card.ctx.font = 'bold 56px Arial';
-      card.ctx.textAlign = 'center';
-      card.ctx.textBaseline = 'middle';
-      card.ctx.fillText(displayText, 42, 128);
-      card.texture.needsUpdate = true;
+      
+      // Farb-Textur laden und auf Canvas zeichnen
+      const colorTexture = colorTargetTextures[randColor.name];
+      const img = colorTexture.image;
+      
+      if (img && img.complete) {
+        // Bild ist bereits geladen
+        card.ctx.clearRect(0, 0, 85, 170);
+        card.ctx.drawImage(img, 0, 0, 85, 170);
+        
+        // Zahl 45px südlicher (von 128 auf 173)
+        const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
+        card.ctx.fillStyle = '#2a1810';
+        card.ctx.font = 'bold 56px Arial';
+        card.ctx.textAlign = 'center';
+        card.ctx.textBaseline = 'middle';
+        card.ctx.fillText(displayText, 42, 173);
+        
+        card.texture.needsUpdate = true;
+        card.mesh.material.map = card.texture;
+        card.mesh.material.needsUpdate = true;
+      } else {
+        // Bild noch nicht geladen, warten
+        img.onload = () => {
+          card.ctx.clearRect(0, 0, 85, 170);
+          card.ctx.drawImage(img, 0, 0, 85, 170);
+          
+          const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
+          card.ctx.fillStyle = '#2a1810';
+          card.ctx.font = 'bold 56px Arial';
+          card.ctx.textAlign = 'center';
+          card.ctx.textBaseline = 'middle';
+          card.ctx.fillText(displayText, 42, 173);
+          
+          card.texture.needsUpdate = true;
+          card.mesh.material.map = card.texture;
+          card.mesh.material.needsUpdate = true;
+        };
+      }
+      
       card.mesh.scale.set(1, 1, 1);
     }
 

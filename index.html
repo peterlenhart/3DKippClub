@@ -47,21 +47,24 @@
 
     #hintText {
       position: absolute;
-      top: 425px;
-      left: 180px;
+      top: 420px;
+      left: 50%;
       transform: translateX(-50%);
       text-align: center;
-      font-size: 24px;
+      font-size: 36px;
       font-weight: bold;
-      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #d4b48c;
       text-shadow: 0 2px 4px rgba(0,0,0,0.8),
-                   0 0 10px rgba(255,255,255,0.5);
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+                   0 0 10px rgba(212,180,140,0.5);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
       pointer-events: none;
-      white-space: nowrap;
+      width: 360px;
+      overflow: visible;
+      line-height: 1.3;
+      opacity: 0;
+      will-change: transform, opacity, text-shadow;
+      backface-visibility: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
     #countdown {
@@ -127,6 +130,42 @@
     }
     .kippBtn.pulsing {
       animation: kippPulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes textGoldenPulse {
+      0%, 100% { 
+        transform: translateX(-50%) scale(1);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8),
+                     0 0 10px rgba(212,180,140,0.3);
+      }
+      50% { 
+        transform: translateX(-50%) scale(1.25);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8),
+                     0 0 20px rgba(212,180,140,0.9),
+                     0 0 40px rgba(212,180,140,0.5);
+      }
+    }
+
+    @keyframes textSinglePulse {
+      0% { 
+        opacity: 0;
+        transform: translateX(-50%) scale(0.75) translateZ(0);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8),
+                     0 0 5px rgba(212,180,140,0.2);
+      }
+      65% { 
+        opacity: 1;
+        transform: translateX(-50%) scale(1.3) translateZ(0);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8),
+                     0 0 20px rgba(212,180,140,0.9),
+                     0 0 40px rgba(212,180,140,0.5);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(-50%) scale(1.3) translateZ(0);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8),
+                     0 0 12px rgba(212,180,140,0.3);
+      }
     }
 
     /* PLATZHALTER-RECHTECKE */
@@ -256,7 +295,7 @@
   
   <div id="uiOverlay">
     <div id="handIcon">👆</div>
-    <div id="hintText">KIPPE & MERKE!</div>
+    <div id="hintText"></div>
     <div id="countdown">60</div>
     <button id="actionButton">weiter</button>
     <button id="backButton">↻</button>
@@ -611,6 +650,7 @@
     // Position: Zeile 11 Oberlinie, Spalte A Mitte
     // Zeile 11 Oberlinie: -0.359375 + 7 * 0.15625 - 0.078125 = 0.656250
     handDemo.position.set(-0.625 + handWidth/2 + 0.15625, 0.001 + 3 * 0.15625 + 0.15, 0.656250 + 0.15625);
+    const handOriginalPos = handDemo.position.clone(); // Ursprungsposition speichern
     handDemo.visible = false;
     scene.add(handDemo);
 
@@ -1004,7 +1044,7 @@
         pauseDragActive = false;
 
         // UI faden ein
-        hintText.textContent = 'SCHAUEN & MERKEN';
+        hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
         hintText.style.opacity = '0';
         hintText.style.display = 'block';
         actionButton.textContent = 'weiter';
@@ -1247,7 +1287,7 @@
     let countdownTimer = null;
 
     // UI für Demo-Phase initialisieren
-    hintText.textContent = 'SCHAUEN & MERKEN';
+    hintText.textContent = ''; // Leer lassen - Text-Sequenz übernimmt
     actionButton.style.display = 'none';
     countdown.style.display = 'none';
     
@@ -1282,7 +1322,43 @@
     // =========================
     // DEMO-ANIMATION Phase 1
     // =========================
+    let textSequenceInterval = null;
+    let textSequenceStarted = false;
+    
+    function startTextSequence() {
+      if (textSequenceStarted) return; // Nur einmal starten!
+      textSequenceStarted = true;
+      
+      const texts = ['KIPPE', 'SCHAU', 'UND MERKE'];
+      let currentIndex = 0;
+      
+      function showNextWord() {
+        if (gamePhase !== 'demo') {
+          textSequenceStarted = false;
+          hintText.style.animation = 'none';
+          return;
+        }
+        
+        hintText.textContent = texts[currentIndex];
+        hintText.style.animation = 'none';
+        
+        // Force reflow to restart animation
+        void hintText.offsetWidth;
+        
+        hintText.style.animation = 'textSinglePulse 1.6s linear';
+        console.log('Text changed to:', texts[currentIndex], 'Index:', currentIndex);
+        
+        currentIndex = (currentIndex + 1) % texts.length;
+        
+        setTimeout(showNextWord, 1600);
+      }
+      
+      showNextWord();
+    }
+    
     function startDemoAnimation() {
+      // Hand auf Ursprungsposition zurücksetzen
+      handDemo.position.copy(handOriginalPos);
       handDemo.visible = true;
       handDemo.rotation.z = 0; // Initial keine Drehung
       
@@ -1362,24 +1438,33 @@
         });
       }
       
-      // Demo-Sequenz ausführen
+      // Demo-Sequenz mit Loop
       wippNord().then(() => {
+        if (gamePhase !== 'demo') {
+          handDemo.visible = false;
+          return Promise.reject('demo ended');
+        }
         return wippOst();
       }).then(() => {
-        // Hand ausblenden
-        handDemo.visible = false;
-        // Zu Phase 2 wechseln
-        gamePhase = 'kippen';
-        hintText.textContent = 'KIPPE & MERKE!';
-        actionButton.textContent = 'weiter';
-        actionButton.style.display = 'block';
-        countdown.style.display = 'block';
+        if (gamePhase !== 'demo') {
+          handDemo.visible = false;
+          return;
+        }
+        // Schleife: Demo wiederholen
+        setTimeout(() => {
+          if (gamePhase === 'demo') {
+            startDemoAnimation();
+          }
+        }, 800);
+      }).catch(() => {
+        // Demo wurde abgebrochen
       });
     }
     
     // Demo starten nach kurzer Verzögerung
     setTimeout(() => {
       if (gamePhase === 'demo') {
+        startTextSequence(); // Text-Sequenz nur beim allerersten Start
         startDemoAnimation();
       }
     }, 1000);
@@ -1441,7 +1526,7 @@
       
       // UI zurücksetzen zu Phase 2
       hintText.style.display = 'block';
-      hintText.textContent = 'KIPPE & MERKE!';
+      hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
       actionButton.textContent = 'weiter';
       actionButton.style.display = 'block';
       actionButton.classList.remove('pulse');
@@ -1596,6 +1681,14 @@
 
 
     renderer.domElement.addEventListener('touchstart', (e) => {
+      // Demo-Phase beenden beim ersten Touch
+      if (gamePhase === 'demo') {
+        gamePhase = 'kippen';
+        hintText.style.display = 'none'; // Hinweistext ausblenden
+        countdown.style.display = 'block'; // Countdown einblenden
+        // Hand wird automatisch in demoLoop() ausgeblendet
+      }
+      
       if (gamePhase === 'pause' && pausePivotGroup) {
         e.preventDefault();
         const touch = e.touches[0];
@@ -1811,6 +1904,15 @@
       }
 
       animateFall();
+    });
+
+    // Desktop-Support: Click startet Spielphase
+    renderer.domElement.addEventListener('click', (e) => {
+      if (gamePhase === 'demo') {
+        gamePhase = 'kippen';
+        hintText.style.display = 'none'; // Hinweistext ausblenden
+        countdown.style.display = 'block'; // Countdown einblenden
+      }
     });
     
     async function performKipp(direction, duration = 800) {

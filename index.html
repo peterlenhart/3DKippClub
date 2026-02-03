@@ -621,14 +621,17 @@
       // Rotation: horizontal (wie Boden)
       spieltisch.rotation.x = -Math.PI / 2;
       
-      // Position: obere linke Ecke auf A1
+      // Position: STATISCH UND UNVERÄNDERLICH
       // A1 ist bei x=-0.625 (linke Kante), z=-0.515625 - 2*0.15625 (2 Zellen nördlicher)
       // Plane-Zentrum positionieren
-      const xCenter = -0.625 + width / 2;
-      const zCenter = -0.828125 + height / 2; // 2 Zellen nördlicher
-      const yPos = 0.001 + 3 * 0.15625; // 3 Zellen über π1 = 0.46975
+      const SPIELTISCH_X = -0.625 + (8 * 0.15625) / 2; // = 0.0
+      const SPIELTISCH_Y = 0.001 + 3 * 0.15625; // = 0.46975
+      const SPIELTISCH_Z = -0.828125 + height / 2;
       
-      spieltisch.position.set(xCenter, yPos, zCenter);
+      spieltisch.position.set(SPIELTISCH_X, SPIELTISCH_Y, SPIELTISCH_Z);
+      // Position einfrieren - darf sich NIEMALS ändern
+      spieltisch.matrixAutoUpdate = false;
+      spieltisch.updateMatrix();
       spieltisch.receiveShadow = true;
       scene.add(spieltisch);
     });
@@ -1686,9 +1689,9 @@
       // Demo-Phase beenden beim ersten Touch
       if (gamePhase === 'demo') {
         gamePhase = 'kippen';
+        handDemo.visible = false; // Hand sofort ausblenden
         hintText.style.display = 'none'; // Hinweistext ausblenden
         countdown.style.display = 'block'; // Countdown einblenden
-        // Hand wird automatisch in demoLoop() ausgeblendet
         return; // WICHTIG: Erst beim NÄCHSTEN Touch darf gekippt werden
       }
       
@@ -1913,6 +1916,7 @@
     renderer.domElement.addEventListener('click', (e) => {
       if (gamePhase === 'demo') {
         gamePhase = 'kippen';
+        handDemo.visible = false; // Hand sofort ausblenden
         hintText.style.display = 'none'; // Hinweistext ausblenden
         countdown.style.display = 'block'; // Countdown einblenden
         return; // WICHTIG: Erst beim NÄCHSTEN Click darf gekippt werden

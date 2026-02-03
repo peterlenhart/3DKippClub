@@ -602,13 +602,15 @@
     const handGeometry = new THREE.PlaneGeometry(handWidth, handWidth);
     const handMaterial = new THREE.MeshBasicMaterial({ 
       map: handTexture,
-      transparent: true
+      transparent: true,
+      side: THREE.DoubleSide,
+      alphaTest: 0.1
     });
     const handDemo = new THREE.Mesh(handGeometry, handMaterial);
     handDemo.rotation.x = -Math.PI / 2;
     // Position: Zeile 11 Oberlinie, Spalte A Mitte
     // Zeile 11 Oberlinie: -0.359375 + 7 * 0.15625 - 0.078125 = 0.656250
-    handDemo.position.set(-0.625 + handWidth/2 + 0.15625, 0.001 + 3 * 0.15625 + 0.002, 0.656250 + 0.15625);
+    handDemo.position.set(-0.625 + handWidth/2 + 0.15625, 0.001 + 3 * 0.15625 + 0.15, 0.656250 + 0.15625);
     handDemo.visible = false;
     scene.add(handDemo);
 
@@ -1327,9 +1329,9 @@
       // Wipp Richtung Q2 (Ost, um Z-Achse)
       function wippOst() {
         return new Promise(resolve => {
-          // Hand für Ost-Kipp neu positionieren (3 Zellen nördlicher, 3 Zellen westlicher)
+          // Hand für Ost-Kipp neu positionieren (3 Zellen nördlicher, 2.77 Zellen westlicher)
           handDemo.position.z = handStart.z - 0.46875;
-          handDemo.position.x = handStart.x - 0.46875;
+          handDemo.position.x = handStart.x - 0.43375;
           const handStartQ2 = handDemo.position.clone();
           handDemo.rotation.z = -Math.PI / 2; // 90° cw gedreht
           const startTime = performance.now();

@@ -602,36 +602,41 @@
     // =========================
     // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    // Spieltisch SOFORT erstellen mit FESTER Position (nie ändern!)
-    const SPIELTISCH_WIDTH = 8 * 0.15625; // 1.25
-    const SPIELTISCH_HEIGHT = SPIELTISCH_WIDTH * 0.75; // Geschätzte Höhe
-    const SPIELTISCH_X = -0.625 + SPIELTISCH_WIDTH / 2; // = 0.0
-    const SPIELTISCH_Y = 0.001 + 3 * 0.15625; // = 0.46975
-    const SPIELTISCH_Z = -0.828125 + SPIELTISCH_HEIGHT / 2;
-    
-    const spieltischGeometry = new THREE.PlaneGeometry(SPIELTISCH_WIDTH, SPIELTISCH_HEIGHT);
-    const spieltischMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x3a2f1f, // Platzhalter-Farbe
-      transparent: true,
-      roughness: 0.8,
-      metalness: 0.2
-    });
-    const spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
-    
-    // Position EINMALIG setzen und für IMMER einfrieren
-    spieltisch.rotation.x = -Math.PI / 2;
-    spieltisch.position.set(SPIELTISCH_X, SPIELTISCH_Y, SPIELTISCH_Z);
-    spieltisch.matrixAutoUpdate = false;
-    spieltisch.updateMatrix();
-    spieltisch.receiveShadow = true;
-    scene.add(spieltisch);
-    
-    // Textur asynchron laden - KEINE Position-Änderung mehr!
-    new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
-      // NUR Material updaten
-      spieltischMaterial.map = texture;
-      spieltischMaterial.color.setHex(0xffffff);
-      spieltischMaterial.needsUpdate = true;
+    // Spieltisch: Position wird EINMAL nach Textur-Load gesetzt und eingefroren
+    const spieltischTexture = new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
+      // Breite: 8 Zellen = 1.25
+      const width = 8 * 0.15625; // 1.25
+      // Höhe proportional zur Bildgröße
+      const imgAspect = texture.image.height / texture.image.width;
+      const height = width * imgAspect;
+      
+      const spieltischGeometry = new THREE.PlaneGeometry(width, height);
+      const spieltischMaterial = new THREE.MeshStandardMaterial({ 
+        map: texture,
+        transparent: true,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      const spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
+      
+      // Rotation: horizontal (wie Boden)
+      spieltisch.rotation.x = -Math.PI / 2;
+      
+      // Position: obere linke Ecke auf A1
+      // A1 ist bei x=-0.625 (linke Kante), z=-0.515625 - 2*0.15625 (2 Zellen nördlicher)
+      // Plane-Zentrum positionieren
+      const xCenter = -0.625 + width / 2;
+      const zCenter = -0.828125 + height / 2; // 2 Zellen nördlicher
+      const yPos = 0.001 + 3 * 0.15625; // 3 Zellen über π1 = 0.46975
+      
+      spieltisch.position.set(xCenter, yPos, zCenter);
+      
+      // WICHTIG: Position einfrieren - darf sich nicht mehr ändern!
+      spieltisch.matrixAutoUpdate = false;
+      spieltisch.updateMatrix();
+      
+      spieltisch.receiveShadow = true;
+      scene.add(spieltisch);
     });
 
     // =========================

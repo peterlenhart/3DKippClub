@@ -602,12 +602,14 @@
     // =========================
     // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    // Spieltisch SOFORT erstellen (ohne auf Textur-Load zu warten)
+    // Spieltisch SOFORT erstellen mit FESTER Position (nie ändern!)
     const SPIELTISCH_WIDTH = 8 * 0.15625; // 1.25
+    const SPIELTISCH_HEIGHT = SPIELTISCH_WIDTH * 0.75; // Geschätzte Höhe
     const SPIELTISCH_X = -0.625 + SPIELTISCH_WIDTH / 2; // = 0.0
     const SPIELTISCH_Y = 0.001 + 3 * 0.15625; // = 0.46975
+    const SPIELTISCH_Z = -0.828125 + SPIELTISCH_HEIGHT / 2;
     
-    const spieltischGeometry = new THREE.PlaneGeometry(SPIELTISCH_WIDTH, SPIELTISCH_WIDTH * 0.5625); // Aspect ratio später anpassen
+    const spieltischGeometry = new THREE.PlaneGeometry(SPIELTISCH_WIDTH, SPIELTISCH_HEIGHT);
     const spieltischMaterial = new THREE.MeshStandardMaterial({ 
       color: 0x3a2f1f, // Platzhalter-Farbe
       transparent: true,
@@ -616,29 +618,17 @@
     });
     const spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
     
-    // Position JETZT setzen und einfrieren
+    // Position EINMALIG setzen und für IMMER einfrieren
     spieltisch.rotation.x = -Math.PI / 2;
-    spieltisch.position.set(SPIELTISCH_X, SPIELTISCH_Y, -0.828125 + (SPIELTISCH_WIDTH * 0.5625) / 2);
+    spieltisch.position.set(SPIELTISCH_X, SPIELTISCH_Y, SPIELTISCH_Z);
     spieltisch.matrixAutoUpdate = false;
     spieltisch.updateMatrix();
     spieltisch.receiveShadow = true;
     scene.add(spieltisch);
     
-    // Textur asynchron laden und NUR Material updaten (Position bleibt!)
+    // Textur asynchron laden - KEINE Position-Änderung mehr!
     new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
-      const imgAspect = texture.image.height / texture.image.width;
-      const height = SPIELTISCH_WIDTH * imgAspect;
-      
-      // Geometrie mit korrekter Höhe
-      spieltisch.geometry.dispose();
-      spieltisch.geometry = new THREE.PlaneGeometry(SPIELTISCH_WIDTH, height);
-      
-      // Z-Position korrigieren
-      const SPIELTISCH_Z = -0.828125 + height / 2;
-      spieltisch.position.z = SPIELTISCH_Z;
-      spieltisch.updateMatrix();
-      
-      // Material mit Textur
+      // NUR Material updaten
       spieltischMaterial.map = texture;
       spieltischMaterial.color.setHex(0xffffff);
       spieltischMaterial.needsUpdate = true;
@@ -1468,10 +1458,17 @@
               handDemo.visible = false;
               return;
             }
-            // 3 Wobbles/Texte durch → Pause 3s, dann nächster Zyklus
+            // 3 Wobbles/Texte durch → Hand ausblenden für Pause
+            handDemo.visible = false;
+            
+            // Pause 3s, dann nächster Zyklus
             setTimeout(() => {
               if (gamePhase === 'demo') {
-                demoLoop(); // Immer gleich: N-O-N
+                // Hand zurücksetzen und wieder sichtbar machen
+                handDemo.position.copy(handStart);
+                handDemo.rotation.z = 0;
+                handDemo.visible = true;
+                demoLoop(); // Nächster Zyklus
               }
             }, 3000);
           })

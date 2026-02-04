@@ -332,13 +332,6 @@
     // =========================
     const scene = new THREE.Scene();
     // scene.background gelöscht - body background (#000000) wird sichtbar
-    
-    // SEPARATE Group für statische Objekte die sich NIE bewegen dürfen
-    const staticGroup = new THREE.Group();
-    staticGroup.matrixAutoUpdate = false;
-    staticGroup.position.set(0, 0, 0);
-    staticGroup.updateMatrix();
-    scene.add(staticGroup);
 
     const containerWidth = 360;
     const containerHeight = 720;
@@ -425,9 +418,7 @@
     boxboden.rotation.x = -Math.PI / 2;
     boxboden.position.set(0, 0.001, 0.109375);
     boxboden.receiveShadow = true;
-    boxboden.matrixAutoUpdate = false;
-    boxboden.updateMatrix();
-    staticGroup.add(boxboden); // Auch in staticGroup!
+    scene.add(boxboden); // Zurück zu scene direkt
     
     const gridSize = 16 * 0.15625;
     const gridDivisions = 16;
@@ -611,7 +602,6 @@
     // =========================
     // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    // Spieltisch in STATISCHER Group - kann sich NICHT bewegen
     let spieltisch = null;
     const SPIEL_WIDTH = 8 * 0.15625;
     
@@ -641,13 +631,13 @@
       spieltisch.castShadow = false;
       spieltisch.renderOrder = 1;
       
-      // Matrix einfrieren
+      // Matrix komplett einfrieren
       spieltisch.matrixAutoUpdate = false;
       spieltisch.updateMatrix();
       
-      // WICHTIG: Zu STATISCHER Group hinzufügen, NICHT direkt zu scene
-      staticGroup.add(spieltisch);
-      console.log('Spieltisch loaded and frozen in staticGroup');
+      // Direkt zu Scene hinzufügen
+      scene.add(spieltisch);
+      console.log('Spieltisch loaded at fixed position:', xCenter, yPos, zCenter);
     });
 
     // =========================
@@ -1403,12 +1393,20 @@
       function wippOst() {
         return new Promise(resolve => {
           showTextAtWobble(); // Text genau beim Wobble-Start
+          
+          // Hand UNSICHTBAR während Repositionierung
+          handDemo.visible = false;
+          
           // Hand für Ost-Kipp neu positionieren (3 Zellen nördlicher, 2.77 Zellen westlicher)
           const handQ2PosZ = handStart.z - 0.46875;
           const handQ2PosX = handStart.x - 0.43375;
           handDemo.position.set(handQ2PosX, handDemo.position.y, handQ2PosZ);
           const handStartQ2 = handDemo.position.clone();
           handDemo.rotation.z = -Math.PI / 2; // 90° cw gedreht
+          
+          // Hand wieder SICHTBAR nach Repositionierung
+          setTimeout(() => { handDemo.visible = true; }, 50);
+          
           const startTime = performance.now();
           function animateWippOst(currentTime) {
             const elapsed = currentTime - startTime;

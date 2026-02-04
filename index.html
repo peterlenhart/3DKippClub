@@ -25,12 +25,16 @@
       transform: translateX(-50%);
       width: 360px;
       height: 720px;
+      overflow: hidden;
+      touch-action: none;
     }
 
     #container canvas {
       position: absolute;
       top: 0;
       left: 0;
+      touch-action: none;
+      user-select: none;
     }
 
     /* UI OVERLAY */
@@ -659,7 +663,8 @@
     handDemo.position.set(-0.625 + handWidth/2 + 0.15625, 0.001 + 3 * 0.15625 + 0.15, 0.656250 + 0.15625);
     const handOriginalPos = handDemo.position.clone(); // Ursprungsposition speichern
     handDemo.visible = false;
-    scene.add(handDemo);
+    // TEMPORÄR: Hand NICHT zur Scene hinzufügen um zu testen ob sie das Problem verursacht
+    // scene.add(handDemo);
 
     // =========================
     // WÜRFEL mit 3x3 Grid-Textur
@@ -1394,18 +1399,8 @@
         return new Promise(resolve => {
           showTextAtWobble(); // Text genau beim Wobble-Start
           
-          // Hand UNSICHTBAR während Repositionierung
+          // Hand KOMPLETT UNSICHTBAR während Ost-Wobble
           handDemo.visible = false;
-          
-          // Hand für Ost-Kipp neu positionieren (3 Zellen nördlicher, 2.77 Zellen westlicher)
-          const handQ2PosZ = handStart.z - 0.46875;
-          const handQ2PosX = handStart.x - 0.43375;
-          handDemo.position.set(handQ2PosX, handDemo.position.y, handQ2PosZ);
-          const handStartQ2 = handDemo.position.clone();
-          handDemo.rotation.z = -Math.PI / 2; // 90° cw gedreht
-          
-          // Hand wieder SICHTBAR nach Repositionierung
-          setTimeout(() => { handDemo.visible = true; }, 50);
           
           const startTime = performance.now();
           function animateWippOst(currentTime) {
@@ -1416,10 +1411,6 @@
             // Würfel wippen
             cube.quaternion.copy(cubeStartRot);
             cube.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -angle));
-            
-            // Hand synchron bewegen (x-Richtung, nach rechts)
-            const handOffset = Math.sin(t * Math.PI) * 0.1;
-            handDemo.position.x = handStartQ2.x + handOffset;
             
             if (t < 1) {
               requestAnimationFrame(animateWippOst);

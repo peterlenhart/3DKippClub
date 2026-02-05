@@ -1,86 +1,88 @@
-# Brain Score – Final Formula (locked)
+BRAIN SCORE – FINAL FORMULA (LOCKED)
+==================================
 
-This document defines the final Brain Score calculation.
-The formula is tuned to match human intuition and fixed anchor points.
+Design assumptions
+------------------
+• Two observation phases → 2 × 15 s free observation
+• Total free observation time: 30 s
+• Maximum observation time: 120 s
+• Hits dominate over time
+• Each additional hit must stay meaningful up to 6 hits
+• Random luck is capped and separated from skill
 
----
+--------------------------------------------------
 
-## Fixed Anchor Points
+Definitions
+-----------
+T = total observation time in seconds (sum of all observation phases, including jokers)
+H = number of hits (integer, 0…6)
 
-- Observation Time = 15 s, Hits = 6  → Brain Score = 100 %
-- Observation Time = 75 s, Hits = 3  → Brain Score = 69 %
-- Observation Time = 150 s, Hits = 1 → Brain Score = 12 %
-- Hits = 0 → No percentage value
-  Display text: "No Hit, no Score"
+Constants
+---------
+FREE_TIME = 30        // seconds (2 phases × 15 s)
+MAX_TIME  = 120       // seconds
+EXTRA_TIME_RANGE = 90 // MAX_TIME - FREE_TIME
 
----
+--------------------------------------------------
 
-## Definitions
+Clamp observation time
+----------------------
+if T < FREE_TIME → T = FREE_TIME
+if T > MAX_TIME  → T = MAX_TIME
 
-- T = total observation time in seconds (including all joker time)
-- H = number of hits (0…6)
-- Maximum observation time: 150 s
-- Free observation time: 15 s
-- Extra observation time range: 135 s
+--------------------------------------------------
 
-Clamp:
-- If T < 15 → T = 15
-- If T > 150 → T = 150
-
----
-
-## Time Factor
-
+Time Factor
+-----------
 Extra observation time:
+E = clamp(T - FREE_TIME, 0…EXTRA_TIME_RANGE)
 
-E = clamp(T - 15, 0…135)
+Time score factor:
+S_time = 1 - 0.31 * (E / EXTRA_TIME_RANGE) ^ 0.855
 
-Time factor:
+Properties:
+• S_time = 1.00 at T = 30 s
+• S_time = 0.69 at T = 120 s
 
-S_time = 1 - 0.4 * (E / 135) ^ 0.855
+--------------------------------------------------
 
-Result range:
-- S_time = 1.00 at T = 15 s
-- S_time = 0.60 at T = 150 s
+Hit Factor (logistic, fairness-balanced)
+----------------------------------------
+k = 1.0              // fairness slope (lower = more even hit weighting)
+c = 2.5976583        // shift (calibrated to anchor points)
 
----
+Raw logistic:
+L(H) = 1 / (1 + exp(-k * (H - c)))
 
-## Hit Factor (logistic, normalized)
+Normalized hit factor:
+S_hits = L(H) / L(6)
 
-S_hits = [1 / (1 + exp(-1.611 * (H - 1.860)))]
-         / [1 / (1 + exp(-1.611 * (6 - 1.860)))]
+Special rule:
+• If H = 0 → no percentage score
 
-Special rules:
-- If H = 0 → no Brain Score percentage
-- Display instead: "No Hit, no Score"
+--------------------------------------------------
 
----
+Final Brain Score
+-----------------
+If H = 0:
+  Display: "Brain Score: No Hit, no Score"
 
-## Final Brain Score
+Else:
+  BrainScore (%) = 100 * S_time * S_hits
 
-BrainScore (%) = 100 * S_time * S_hits
+--------------------------------------------------
 
----
+Anchor validation
+-----------------
+• T = 30 s, H = 6 → 100 %
+• T = 120 s, H = 6 → 69 %
+• T = 120 s, H = 1 → 12 %
+• H = 0 → No Hit, no Score
 
-## Display Rules
+--------------------------------------------------
 
-- H = 0:
-  "Brain Score: No Hit, no Score"
-
-- H = 1 and T = 150 s:
-  Approx. 12 %
-  Optional label: "One-Hit Lucky-Kip"
-
-- H ≥ 1:
-  Display Brain Score in %
-
----
-
-## Design Intent
-
-- Hits dominate over time
-- Extra observation time reduces score smoothly
-- 6 hits are always strong, even with long observation time
-- Random luck is capped and clearly separated from skill
-
-This formula is final and must not be modified without re-validating all anchor points.
+Modification rule
+-----------------
+This formula is locked.
+Any change to constants (k, c, exponents, coefficients)
+requires re-validation of all anchor points.

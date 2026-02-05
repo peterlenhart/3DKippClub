@@ -1370,7 +1370,8 @@
           
           // Nächstes leeres Kärtchen befüllen (wenn vorhanden)
           // activeCardIdx ist noch der alte Wert, +1 ist das nächste Kärtchen
-          if (activeCardIdx < 5) {
+          // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
+          if (activeCardIdx < 5 && activeCardIdx !== 2) {
             const neueKombi = generateNeueKombi();
             if (neueKombi) {
               fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
@@ -1436,7 +1437,8 @@
       card.isMiss = true;
       
       // Rechts daneben (activeCardIdx + 1) neues Ziel generieren
-      if (activeCardIdx < 5) {
+      // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
+      if (activeCardIdx < 5 && activeCardIdx !== 2) {
         const neueKombi = generateNeueKombi();
         if (neueKombi) {
           fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);

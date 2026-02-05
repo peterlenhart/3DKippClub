@@ -924,6 +924,14 @@
 
     let activeCardIdx = 0;
     const bereitsGetroffen = new Set(); // "zahl_farbe" Kombinationen die bereits Treffer waren
+    const bereitsAusgegeben = new Set(); // "zahl_farbe" Kombinationen die bereits als Ziel ausgegeben wurden
+    
+    const GAME_COLORS = [
+      { name: 'violett', hex: '#a41b85' },
+      { name: 'blau',    hex: '#006bb3' },
+      { name: 'gruen',   hex: '#00a652' },
+      { name: 'orange',  hex: '#e67814' }
+    ];
 
     function fillCardWithKombi(idx, zahl, colorObj) {
       const card = gameCards[idx];
@@ -956,6 +964,38 @@
       card.mesh.material.opacity = 1;
       card.mesh.material.needsUpdate = true;
       card.mesh.scale.set(1, 1, 1);
+      
+      // Kombi als ausgegeben markieren
+      bereitsAusgegeben.add(zahl + '_' + colorObj.name);
+    }
+    
+    function drawGoldenBorder(card) {
+      // Goldgelben 4px Rahmen auf Canvas zeichnen
+      card.ctx.strokeStyle = '#d4b48c';
+      card.ctx.lineWidth = 4;
+      card.ctx.strokeRect(2, 2, 85 - 4, 170 - 4);
+      card.texture.needsUpdate = true;
+    }
+    
+    function generateNeueKombi() {
+      // Alle möglichen Kombis
+      const alleMoeglichenKombis = [];
+      for (let z = 1; z <= 12; z++) {
+        for (const colorObj of GAME_COLORS) {
+          const key = z + '_' + colorObj.name;
+          // Nur Kombis die noch nicht ausgegeben wurden
+          if (!bereitsAusgegeben.has(key)) {
+            alleMoeglichenKombis.push({ zahl: z, color: colorObj });
+          }
+        }
+      }
+      
+      // Wenn keine mehr verfügbar, null zurückgeben
+      if (alleMoeglichenKombis.length === 0) return null;
+      
+      // Zufällige auswählen
+      const idx = Math.floor(Math.random() * alleMoeglichenKombis.length);
+      return alleMoeglichenKombis[idx];
     }
 
 
@@ -1228,20 +1268,50 @@
     function animateTreffer() {
       const card = gameCards[activeCardIdx];
       const mesh = card.mesh;
-      const origScale = 1.0;
-      const targetScale = 1.7;
-
-      // 1. Kärtchen groß machen
-      animateVal(origScale, targetScale, 350, (s) => {
-        mesh.scale.set(s, s, s);
-      }, () => {
-        // 2. Groß bleiben für 2 Sekunden
-        setTimeout(() => {
-          // 3. Ausblenden
-          mesh.visible = false;
+      
+      // Kurze Puls-Animation (3 Pulse)
+      const pulseDuration = 200; // ms pro Puls
+      const pulseCount = 3;
+      let currentPulse = 0;
+      
+      function doPulse() {
+        if (currentPulse >= pulseCount) {
+          // Animation fertig - Rahmen hinzufügen
+          drawGoldenBorder(card);
+          
+          // Nächstes leeres Kärtchen befüllen (wenn vorhanden)
+          // activeCardIdx ist noch der alte Wert, +1 ist das nächste Kärtchen
+          if (activeCardIdx < 5) {
+            const neueKombi = generateNeueKombi();
+            if (neueKombi) {
+              fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
+            }
+          }
+          
+          // Weiter zur nächsten Runde (onRunde erhöht activeCardIdx)
           onRunde();
-        }, 2000);
-      });
+          return;
+        }
+        
+        // Puls: 1.0 → 1.15 → 1.0
+        const startTime = performance.now();
+        function animatePulse(now) {
+          const t = Math.min((now - startTime) / pulseDuration, 1);
+          const scale = 1.0 + Math.sin(t * Math.PI) * 0.15;
+          mesh.scale.set(scale, scale, scale);
+          
+          if (t < 1) {
+            requestAnimationFrame(animatePulse);
+          } else {
+            mesh.scale.set(1, 1, 1);
+            currentPulse++;
+            setTimeout(doPulse, 100); // Kurze Pause zwischen Pulsen
+          }
+        }
+        requestAnimationFrame(animatePulse);
+      }
+      
+      doPulse();
     }
 
     function animateNichtTreffer() {
@@ -1481,13 +1551,6 @@
       document.getElementById('richtungButtons').classList.remove('hidden');
       kippButtons.classList.remove('hidden');
 
-      const GAME_COLORS = [
-        { name: 'violett', hex: '#a41b85' },
-        { name: 'blau',    hex: '#006bb3' },
-        { name: 'gruen',   hex: '#00a652' },
-        { name: 'orange',  hex: '#e67814' }
-      ];
-
       // Kärtchen sichtbar machen
       gameCards.forEach(c => c.mesh.visible = true);
 
@@ -1549,6 +1612,7 @@
       // Kärtchen befüllen mit den generierten Kombis
       activeCardIdx = 0;
       bereitsGetroffen.clear();
+      bereitsAusgegeben.clear();
       
       // Warten bis Texturen geladen sind, dann Kärtchen befüllen
       function fillAllCards() {

@@ -429,30 +429,40 @@
 
     const gameCards = [];
     
-    // Farb-Ziel-Texturen laden mit Promise-Tracking
+    // Farb-Ziel-Texturen als HTML Images laden
+    const colorTargetImages = {};
     const colorTargetTextures = {};
-    const textureLoadPromises = [];
+    const imageLoadPromises = [];
     
     const colorNames = ['blau', 'orange', 'gruen', 'violett'];
     colorNames.forEach(name => {
-      const promise = new Promise((resolve) => {
-        const loader = new THREE.TextureLoader();
-        loader.load(`${name}zielhit.webp`, (texture) => {
+      const promise = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          colorTargetImages[name] = img;
+          const texture = new THREE.Texture(img);
+          texture.needsUpdate = true;
           colorTargetTextures[name] = texture;
+          console.log(`${name}zielhit.webp loaded`);
           resolve();
-        }, undefined, (error) => {
-          console.error(`Failed to load ${name}zielhit.webp:`, error);
-          resolve(); // Resolve anyway to not block
-        });
+        };
+        img.onerror = () => {
+          console.error(`Failed to load ${name}zielhit.webp`);
+          reject();
+        };
+        img.src = `${name}zielhit.webp`;
       });
-      textureLoadPromises.push(promise);
+      imageLoadPromises.push(promise);
     });
     
-    // Warten bis alle Texturen geladen sind
+    // Warten bis alle Bilder geladen sind
     let texturesReady = false;
-    Promise.all(textureLoadPromises).then(() => {
+    Promise.all(imageLoadPromises).then(() => {
       texturesReady = true;
-      console.log('All color textures loaded');
+      console.log('All 4 color textures ready');
+    }).catch(() => {
+      console.error('Some textures failed to load');
+      texturesReady = true; // Trotzdem weitermachen
     });
     
     for (let i = 0; i < 6; i++) {
@@ -905,9 +915,12 @@
       card.zahl = zahl;
       card.color = colorObj;
       
-      // Farb-Textur auf Canvas zeichnen (garantiert geladen)
-      const colorTexture = colorTargetTextures[colorObj.name];
-      const img = colorTexture.image;
+      // Farb-Image auf Canvas zeichnen
+      const img = colorTargetImages[colorObj.name];
+      if (!img) {
+        console.error(`Image ${colorObj.name} not loaded!`);
+        return;
+      }
       
       card.ctx.clearRect(0, 0, 85, 170);
       card.ctx.drawImage(img, 0, 0, 85, 170);
@@ -2259,10 +2272,9 @@
       kippDirection = direction;
       updateRichtungButtons();
 
-      // Kärtchen auf Original zurücksetzen - Textur neu zeichnen
+      // Kärtchen auf Original zurücksetzen - Image neu zeichnen
       const card = gameCards[activeCardIdx];
-      const colorTexture = colorTargetTextures[card.color.name];
-      const img = colorTexture.image;
+      const img = colorTargetImages[card.color.name];
       
       card.ctx.clearRect(0, 0, 85, 170);
       card.ctx.drawImage(img, 0, 0, 85, 170);

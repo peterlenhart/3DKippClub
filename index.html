@@ -176,7 +176,7 @@
     /* BUTTONS 1-6 */
     #kippButtons {
       position: absolute;
-      top: 650px;
+      top: 605px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -287,7 +287,7 @@
     <button id="actionButton">weiter</button>
     <button id="backButton">↻</button>
     
-    <div id="richtungButtons" class="hidden" style="position:absolute;top:585px;left:50%;transform:translateX(-50%);display:flex;gap:21px;width:180px;z-index:200;">
+    <div id="richtungButtons" class="hidden" style="position:absolute;top:540px;left:50%;transform:translateX(-50%);display:flex;gap:21px;width:180px;z-index:200;">
       <button id="cwBtn" class="kippBtn" style="flex:1;height:45px;font-size:40px;line-height:1;position:relative;"><span style="position:absolute;top:calc(50% - 3px);left:50%;transform:translate(-50%,-50%);font-size:40px;">↻</span></button>
       <button id="ccwBtn" class="kippBtn" style="flex:1;height:45px;font-size:40px;line-height:1;position:relative;"><span style="position:absolute;top:calc(50% - 3px);left:50%;transform:translate(-50%,-50%);font-size:40px;">↺</span></button>
     </div>
@@ -429,13 +429,31 @@
 
     const gameCards = [];
     
-    // Farb-Ziel-Texturen laden
-    const colorTargetTextures = {
-      blau: new THREE.TextureLoader().load('blauzielhit.webp'),
-      orange: new THREE.TextureLoader().load('orangezielhit.webp'),
-      gruen: new THREE.TextureLoader().load('gruenzielhit.webp'),
-      violett: new THREE.TextureLoader().load('violettzielhit.webp')
-    };
+    // Farb-Ziel-Texturen laden mit Promise-Tracking
+    const colorTargetTextures = {};
+    const textureLoadPromises = [];
+    
+    const colorNames = ['blau', 'orange', 'gruen', 'violett'];
+    colorNames.forEach(name => {
+      const promise = new Promise((resolve) => {
+        const loader = new THREE.TextureLoader();
+        loader.load(`${name}zielhit.webp`, (texture) => {
+          colorTargetTextures[name] = texture;
+          resolve();
+        }, undefined, (error) => {
+          console.error(`Failed to load ${name}zielhit.webp:`, error);
+          resolve(); // Resolve anyway to not block
+        });
+      });
+      textureLoadPromises.push(promise);
+    });
+    
+    // Warten bis alle Texturen geladen sind
+    let texturesReady = false;
+    Promise.all(textureLoadPromises).then(() => {
+      texturesReady = true;
+      console.log('All color textures loaded');
+    });
     
     for (let i = 0; i < 6; i++) {
       const canvas = document.createElement('canvas');
@@ -889,49 +907,26 @@
       card.zahl = zahl;
       card.color = colorObj;
       
-      // Farb-Textur laden und auf Canvas zeichnen
+      // Farb-Textur auf Canvas zeichnen (garantiert geladen)
       const colorTexture = colorTargetTextures[colorObj.name];
       const img = colorTexture.image;
       
-      if (img && img.complete) {
-        // Bild ist bereits geladen
-        card.ctx.clearRect(0, 0, 85, 170);
-        card.ctx.drawImage(img, 0, 0, 85, 170);
-        
-        // Zahl 42px unter Oberkante
-        const displayText = zahl + ((zahl === 6 || zahl === 9) ? '.' : '');
-        card.ctx.fillStyle = '#2a1810';
-        card.ctx.font = 'bold 56px Arial';
-        card.ctx.textAlign = 'center';
-        card.ctx.textBaseline = 'middle';
-        card.ctx.fillText(displayText, 42, 42);
-        
-        card.texture.needsUpdate = true;
-        card.mesh.material.map = card.texture;
-        card.mesh.material.transparent = false;
-        card.mesh.material.opacity = 1;
-        card.mesh.material.needsUpdate = true;
-      } else {
-        // Bild noch nicht geladen, warten
-        img.onload = () => {
-          card.ctx.clearRect(0, 0, 85, 170);
-          card.ctx.drawImage(img, 0, 0, 85, 170);
-          
-          const displayText = zahl + ((zahl === 6 || zahl === 9) ? '.' : '');
-          card.ctx.fillStyle = '#2a1810';
-          card.ctx.font = 'bold 56px Arial';
-          card.ctx.textAlign = 'center';
-          card.ctx.textBaseline = 'middle';
-          card.ctx.fillText(displayText, 42, 42);
-          
-          card.texture.needsUpdate = true;
-          card.mesh.material.map = card.texture;
-          card.mesh.material.transparent = false;
-          card.mesh.material.opacity = 1;
-          card.mesh.material.needsUpdate = true;
-        };
-      }
+      card.ctx.clearRect(0, 0, 85, 170);
+      card.ctx.drawImage(img, 0, 0, 85, 170);
       
+      // Zahl 42px unter Oberkante
+      const displayText = zahl + ((zahl === 6 || zahl === 9) ? '.' : '');
+      card.ctx.fillStyle = '#2a1810';
+      card.ctx.font = 'bold 56px Arial';
+      card.ctx.textAlign = 'center';
+      card.ctx.textBaseline = 'middle';
+      card.ctx.fillText(displayText, 42, 42);
+      
+      card.texture.needsUpdate = true;
+      card.mesh.material.map = card.texture;
+      card.mesh.material.transparent = false;
+      card.mesh.material.opacity = 1;
+      card.mesh.material.needsUpdate = true;
       card.mesh.scale.set(1, 1, 1);
     }
 
@@ -1616,10 +1611,20 @@
       // Kärtchen befüllen mit den generierten Kombis
       activeCardIdx = 0;
       bereitsGetroffen.clear();
-      for (let i = 0; i < 6; i++) {
-        const kombi = ausgewaehlteKombis[i];
-        fillCardWithKombi(i, kombi.zahl, kombi.color);
+      
+      // Warten bis Texturen geladen sind, dann Kärtchen befüllen
+      function fillAllCards() {
+        if (!texturesReady) {
+          setTimeout(fillAllCards, 50); // Nochmal in 50ms prüfen
+          return;
+        }
+        for (let i = 0; i < 6; i++) {
+          const kombi = ausgewaehlteKombis[i];
+          fillCardWithKombi(i, kombi.zahl, kombi.color);
+        }
       }
+      fillAllCards();
+      
       setButtonsDisabled(false);
     }
     

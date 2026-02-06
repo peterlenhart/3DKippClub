@@ -1368,29 +1368,13 @@
           // Animation fertig - Rahmen hinzufügen
           drawGoldenBorder(card);
           
-          // Nächstes leeres Kärtchen befüllen (wenn vorhanden)
-          // activeCardIdx ist noch der alte Wert, +1 ist das nächste Kärtchen
+          // Nächstes Kärtchen befüllen (wenn vorhanden)
           // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
           if (activeCardIdx < 5 && activeCardIdx !== 2) {
-            // Aktuelle Würfellage prüfen und ausschließen
             const erfuellteKombis = getCurrentErfuellteKombis();
             const neueKombi = generateNeueKombiOhne(erfuellteKombis);
             if (neueKombi) {
               fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
-            }
-            
-            // Alle Kärtchen rechts vom neuen Ziel mit leernohit befüllen
-            for (let i = activeCardIdx + 2; i < 6; i++) {
-              const c = gameCards[i];
-              if (!c.zahl && !c.isHit && !c.isMiss) { // Nur wenn noch nicht gespielt
-                c.ctx.clearRect(0, 0, 85, 170);
-                c.ctx.drawImage(leerImage, 0, 0, 85, 170);
-                c.texture.needsUpdate = true;
-                c.mesh.material.transparent = false;
-                c.mesh.material.opacity = 1;
-                c.mesh.material.needsUpdate = true;
-                c.mesh.visible = true;
-              }
             }
           }
           
@@ -1438,28 +1422,13 @@
       card.color = null;
       card.isMiss = true;
       
-      // Rechts daneben (activeCardIdx + 1) neues Ziel generieren
+      // Nächstes Kärtchen generieren
       // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
       if (activeCardIdx < 5 && activeCardIdx !== 2) {
-        // Aktuelle Würfellage prüfen und ausschließen
         const erfuellteKombis = getCurrentErfuellteKombis();
         const neueKombi = generateNeueKombiOhne(erfuellteKombis);
         if (neueKombi) {
           fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
-        }
-        
-        // Alle Kärtchen rechts vom neuen Ziel mit leernohit befüllen
-        for (let i = activeCardIdx + 2; i < 6; i++) {
-          const c = gameCards[i];
-          if (!c.zahl && !c.isHit && !c.isMiss) { // Nur wenn noch nicht gespielt
-            c.ctx.clearRect(0, 0, 85, 170);
-            c.ctx.drawImage(leerImage, 0, 0, 85, 170);
-            c.texture.needsUpdate = true;
-            c.mesh.material.transparent = false;
-            c.mesh.material.opacity = 1;
-            c.mesh.material.needsUpdate = true;
-            c.mesh.visible = true;
-          }
         }
       }
       
@@ -1728,18 +1697,9 @@
           fillCardWithKombi(0, neueKombi.zahl, neueKombi.color);
         }
         
-        // Restliche 5 Kärtchen (i=1 bis i=5) mit leernohit.webp befüllen
+        // Restliche 5 Kärtchen (i=1 bis i=5) UNSICHTBAR machen
         for (let i = 1; i < 6; i++) {
-          const card = gameCards[i];
-          card.ctx.clearRect(0, 0, 85, 170);
-          card.ctx.drawImage(leerImage, 0, 0, 85, 170);
-          card.texture.needsUpdate = true;
-          card.mesh.material.map = card.texture;
-          card.mesh.material.transparent = false;
-          card.mesh.material.opacity = 1;
-          card.mesh.material.needsUpdate = true;
-          card.mesh.scale.set(1, 1, 1);
-          card.mesh.visible = true;
+          gameCards[i].mesh.visible = false;
         }
       }
       fillAllCards();
@@ -2103,34 +2063,23 @@
       // Pause-Lichter aus
       pauseLights.forEach(l => l.visible = false);
       
-      // Alle 6 Kärtchen sichtbar machen und auf gespeicherte opacity wiederherstellen
+      // Nur die bereits gespielten Kärtchen sichtbar machen und opacity wiederherstellen
       gameCards.forEach((c, i) => {
-        c.mesh.visible = true;
-        if (i < savedCardOpacities.length) {
-          c.mesh.material.opacity = savedCardOpacities[i];
-          c.mesh.material.transparent = (savedCardOpacities[i] < 1);
-          c.mesh.material.needsUpdate = true;
+        if (c.zahl || c.isHit || c.isMiss) {
+          c.mesh.visible = true;
+          if (i < savedCardOpacities.length) {
+            c.mesh.material.opacity = savedCardOpacities[i];
+            c.mesh.material.transparent = (savedCardOpacities[i] < 1);
+            c.mesh.material.needsUpdate = true;
+          }
         }
       });
       
-      // Kärtchen 3: Neues Randomkippziel - OHNE aktuell erfüllte Kombis
+      // Kärtchen 3: Neues Randomkippziel generieren
       const erfuellteKombis = getCurrentErfuellteKombis();
       const neueKombi = generateNeueKombiOhne(erfuellteKombis);
-      
       if (neueKombi) {
         fillCardWithKombi(3, neueKombi.zahl, neueKombi.color);
-      }
-      
-      // Kärtchen 4 und 5: leernohit
-      for (let i = 4; i < 6; i++) {
-        const c = gameCards[i];
-        c.ctx.clearRect(0, 0, 85, 170);
-        c.ctx.drawImage(leerImage, 0, 0, 85, 170);
-        c.texture.needsUpdate = true;
-        c.mesh.material.transparent = false;
-        c.mesh.material.opacity = 1;
-        c.mesh.material.needsUpdate = true;
-        c.mesh.visible = true;
       }
       
       setButtonsDisabled(false);

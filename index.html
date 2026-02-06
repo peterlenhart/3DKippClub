@@ -73,7 +73,7 @@
     
     #brainScore {
       position: absolute;
-      top: 534px;
+      top: 526px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -1141,7 +1141,7 @@
       if (scoreValue === "No Hit, no Score") {
         brainScore.innerHTML = 'BRAIN SCORE:<br>No Hit, no Score';
       } else {
-        brainScore.innerHTML = `BRAIN SCORE: ${scoreValue}<br>Best=100%/worst=12%`;
+        brainScore.innerHTML = `BRAIN SCORE: ${scoreValue}<br><span style="font-size: 26px">Best=100%/worst=12%</span>`;
       }
       brainScore.style.display = 'block';
       brainScore.style.opacity = '1';

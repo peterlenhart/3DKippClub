@@ -73,7 +73,7 @@
     
     #brainScore {
       position: absolute;
-      top: 543px;
+      top: 534px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -1094,7 +1094,13 @@
       
       // Final Brain Score
       const brainScore = 100 * S_time * S_hits;
-      return Math.round(brainScore);
+      
+      // Formatierung: 1 Kommastelle mit %, außer bei 100%
+      if (Math.abs(brainScore - 100) < 0.05) {
+        return "100%";
+      } else {
+        return brainScore.toFixed(1).replace('.', ',') + '%';
+      }
     }
     
     function showGameEnd() {
@@ -1120,7 +1126,7 @@
       if (scoreValue === "No Hit, no Score") {
         brainScore.innerHTML = 'BRAIN SCORE:<br>No Hit, no Score';
       } else {
-        brainScore.innerHTML = `BRAIN SCORE: ${scoreValue}<br>Best=100/worst=12`;
+        brainScore.innerHTML = `BRAIN SCORE: ${scoreValue}<br>Best=100%/worst=12%`;
       }
       brainScore.style.display = 'block';
       brainScore.style.opacity = '1';
@@ -1374,18 +1380,16 @@
             }
             
             // Alle Kärtchen rechts vom neuen Ziel mit leernohit befüllen
-            if (leerImage) {
-              for (let i = activeCardIdx + 2; i < 6; i++) {
-                const c = gameCards[i];
-                if (!c.zahl && !c.isHit && !c.isMiss) { // Nur wenn noch nicht gespielt
-                  c.ctx.clearRect(0, 0, 85, 170);
-                  c.ctx.drawImage(leerImage, 0, 0, 85, 170);
-                  c.texture.needsUpdate = true;
-                  c.mesh.material.transparent = false;
-                  c.mesh.material.opacity = 1;
-                  c.mesh.material.needsUpdate = true;
-                  c.mesh.visible = true;
-                }
+            for (let i = activeCardIdx + 2; i < 6; i++) {
+              const c = gameCards[i];
+              if (!c.zahl && !c.isHit && !c.isMiss) { // Nur wenn noch nicht gespielt
+                c.ctx.clearRect(0, 0, 85, 170);
+                c.ctx.drawImage(leerImage, 0, 0, 85, 170);
+                c.texture.needsUpdate = true;
+                c.mesh.material.transparent = false;
+                c.mesh.material.opacity = 1;
+                c.mesh.material.needsUpdate = true;
+                c.mesh.visible = true;
               }
             }
           }
@@ -1420,11 +1424,9 @@
       const card = gameCards[activeCardIdx];
       
       // Aktuelles Kärtchen durch leernohit ersetzen
-      if (leerImage) {
-        card.ctx.clearRect(0, 0, 85, 170);
-        card.ctx.drawImage(leerImage, 0, 0, 85, 170);
-        card.texture.needsUpdate = true;
-      }
+      card.ctx.clearRect(0, 0, 85, 170);
+      card.ctx.drawImage(leerImage, 0, 0, 85, 170);
+      card.texture.needsUpdate = true;
       
       // Auf 60% transparent setzen
       card.mesh.material.transparent = true;
@@ -1447,18 +1449,16 @@
         }
         
         // Alle Kärtchen rechts vom neuen Ziel mit leernohit befüllen
-        if (leerImage) {
-          for (let i = activeCardIdx + 2; i < 6; i++) {
-            const c = gameCards[i];
-            if (!c.zahl && !c.isHit && !c.isMiss) { // Nur wenn noch nicht gespielt
-              c.ctx.clearRect(0, 0, 85, 170);
-              c.ctx.drawImage(leerImage, 0, 0, 85, 170);
-              c.texture.needsUpdate = true;
-              c.mesh.material.transparent = false;
-              c.mesh.material.opacity = 1;
-              c.mesh.material.needsUpdate = true;
-              c.mesh.visible = true;
-            }
+        for (let i = activeCardIdx + 2; i < 6; i++) {
+          const c = gameCards[i];
+          if (!c.zahl && !c.isHit && !c.isMiss) { // Nur wenn noch nicht gespielt
+            c.ctx.clearRect(0, 0, 85, 170);
+            c.ctx.drawImage(leerImage, 0, 0, 85, 170);
+            c.texture.needsUpdate = true;
+            c.mesh.material.transparent = false;
+            c.mesh.material.opacity = 1;
+            c.mesh.material.needsUpdate = true;
+            c.mesh.visible = true;
           }
         }
       }
@@ -2122,17 +2122,15 @@
       }
       
       // Kärtchen 4 und 5: leernohit
-      if (leerImage) {
-        for (let i = 4; i < 6; i++) {
-          const c = gameCards[i];
-          c.ctx.clearRect(0, 0, 85, 170);
-          c.ctx.drawImage(leerImage, 0, 0, 85, 170);
-          c.texture.needsUpdate = true;
-          c.mesh.material.transparent = false;
-          c.mesh.material.opacity = 1;
-          c.mesh.material.needsUpdate = true;
-          c.mesh.visible = true;
-        }
+      for (let i = 4; i < 6; i++) {
+        const c = gameCards[i];
+        c.ctx.clearRect(0, 0, 85, 170);
+        c.ctx.drawImage(leerImage, 0, 0, 85, 170);
+        c.texture.needsUpdate = true;
+        c.mesh.material.transparent = false;
+        c.mesh.material.opacity = 1;
+        c.mesh.material.needsUpdate = true;
+        c.mesh.visible = true;
       }
       
       setButtonsDisabled(false);
